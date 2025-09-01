@@ -16,10 +16,11 @@ import {
   Clock,
   Globe
 } from 'lucide-react';
-import { mockCourses } from '@/data/mockCourses';
+import { mockCourses, getUserEnrolledCourses } from '@/data/mockCourses';
 
 const Index = () => {
   const featuredCourses = mockCourses.slice(0, 3);
+  const enrolledCourses = getUserEnrolledCourses();
   
   const stats = [
     { label: 'Students', value: '50K+', icon: Users },
@@ -159,6 +160,83 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* You are watching Section */}
+      {enrolledCourses.length > 0 && (
+        <section className="py-16">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between mb-12">
+              <div>
+                <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                  Continue Your Learning
+                </h2>
+                <p className="text-xl text-muted-foreground">
+                  Pick up where you left off
+                </p>
+              </div>
+              <Button variant="outline" asChild>
+                <Link to="/dashboard">
+                  View All Progress
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Link>
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {enrolledCourses.map((course) => (
+                <Card key={course.id} className="course-card overflow-hidden">
+                  <div className="relative">
+                    <img 
+                      src={course.thumbnail} 
+                      alt={course.title}
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <Button
+                        size="lg"
+                        className="bg-white/20 backdrop-blur-sm text-white hover:bg-white/30"
+                        asChild
+                      >
+                        <Link to={`/course/${course.id}?tab=curriculum`}>
+                          <PlayCircle className="h-6 w-6 mr-2" />
+                          Continue Watching
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <Badge className="bg-accent text-white">
+                        {course.progress}% Complete
+                      </Badge>
+                      <div className="flex items-center gap-1">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm">{course.rating}</span>
+                      </div>
+                    </div>
+                    <h3 className="font-semibold text-lg mb-2 line-clamp-2">{course.title}</h3>
+                    <p className="text-muted-foreground text-sm mb-4">
+                      by {course.instructor}
+                    </p>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Progress</span>
+                        <span>{course.progress}%</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div 
+                          className="bg-gradient-primary h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${course.progress}%` }}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Featured Courses */}
       <section className="py-16 bg-muted/30">

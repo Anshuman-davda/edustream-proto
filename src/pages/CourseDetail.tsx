@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,11 +27,20 @@ import { useToast } from '@/hooks/use-toast';
 
 const CourseDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const { addToCart, isInCart } = useCart();
   const { toast } = useToast();
   const [currentLesson, setCurrentLesson] = useState(0);
+  const [activeTab, setActiveTab] = useState('overview');
 
   const course = id ? getCourseById(id) : undefined;
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['overview', 'curriculum', 'reviews'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   if (!course) {
     return (
@@ -148,7 +157,7 @@ const CourseDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2">
-            <Tabs defaultValue="overview" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="curriculum">Curriculum</TabsTrigger>
@@ -427,7 +436,11 @@ const CourseDetail = () => {
                         <span>{course.progress}%</span>
                       </div>
                       <Progress value={course.progress} />
-                      <Button className="w-full bg-gradient-primary text-white" size="lg">
+                      <Button 
+                        className="w-full bg-gradient-primary text-white" 
+                        size="lg"
+                        onClick={() => setActiveTab('curriculum')}
+                      >
                         <Play className="h-4 w-4 mr-2" />
                         Continue Learning
                       </Button>
