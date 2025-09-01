@@ -214,50 +214,144 @@ const CourseDetail = () => {
               </TabsContent>
 
               <TabsContent value="curriculum" className="mt-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BookOpen className="h-5 w-5" />
-                      Course Content
-                    </CardTitle>
-                    <p className="text-muted-foreground">
-                      {course.lessons.length} lessons • {course.duration} total length
-                    </p>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {course.lessons.map((lesson, index) => (
-                        <div
-                          key={lesson.id}
-                          className={`flex items-center justify-between p-4 rounded-lg border transition-colors cursor-pointer hover:bg-muted/50 ${
-                            currentLesson === index ? 'bg-primary/10 border-primary' : ''
-                          }`}
-                          onClick={() => setCurrentLesson(index)}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                              lesson.completed ? 'bg-accent text-white' : 'bg-muted'
-                            }`}>
-                              {lesson.completed ? (
-                                <Check className="h-4 w-4" />
-                              ) : (
-                                <Play className="h-4 w-4" />
-                              )}
-                            </div>
-                            <div>
-                              <h4 className="font-medium">{lesson.title}</h4>
-                              <p className="text-sm text-muted-foreground">Lesson {index + 1}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Clock className="h-4 w-4" />
-                            <span>{lesson.duration}</span>
-                          </div>
+                {course.enrolled ? (
+                  <div className="space-y-6">
+                    {/* Video Player for Enrolled Students */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Play className="h-5 w-5" />
+                          {course.lessons[currentLesson]?.title || 'Select a lesson'}
+                        </CardTitle>
+                        <p className="text-muted-foreground">
+                          Lesson {currentLesson + 1} of {course.lessons.length}
+                        </p>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="aspect-video bg-black rounded-lg overflow-hidden shadow-glow">
+                          <VideoPlayer
+                            src={course.videoUrl} // In a real app, this would be course.lessons[currentLesson].videoUrl
+                            title={course.lessons[currentLesson]?.title || 'Course Lesson'}
+                            onTimeUpdate={(currentTime, duration) => {
+                              // Track progress here
+                              console.log(`Progress: ${(currentTime/duration)*100}%`);
+                            }}
+                            onEnded={() => {
+                              // Mark lesson as completed and advance to next
+                              console.log('Lesson completed');
+                            }}
+                          />
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                        <div className="mt-4 flex justify-between items-center">
+                          <Button 
+                            variant="outline" 
+                            disabled={currentLesson === 0}
+                            onClick={() => setCurrentLesson(Math.max(0, currentLesson - 1))}
+                          >
+                            Previous Lesson
+                          </Button>
+                          <Button 
+                            disabled={currentLesson === course.lessons.length - 1}
+                            onClick={() => setCurrentLesson(Math.min(course.lessons.length - 1, currentLesson + 1))}
+                            className="bg-gradient-primary text-white"
+                          >
+                            Next Lesson
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Lesson List */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <BookOpen className="h-5 w-5" />
+                          Course Content
+                        </CardTitle>
+                        <p className="text-muted-foreground">
+                          {course.lessons.length} lessons • {course.duration} total length
+                        </p>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {course.lessons.map((lesson, index) => (
+                            <div
+                              key={lesson.id}
+                              className={`flex items-center justify-between p-4 rounded-lg border transition-colors cursor-pointer hover:bg-muted/50 ${
+                                currentLesson === index ? 'bg-primary/10 border-primary' : ''
+                              }`}
+                              onClick={() => setCurrentLesson(index)}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                  lesson.completed ? 'bg-accent text-white' : currentLesson === index ? 'bg-primary text-white' : 'bg-muted'
+                                }`}>
+                                  {lesson.completed ? (
+                                    <Check className="h-4 w-4" />
+                                  ) : (
+                                    <Play className="h-4 w-4" />
+                                  )}
+                                </div>
+                                <div>
+                                  <h4 className="font-medium">{lesson.title}</h4>
+                                  <p className="text-sm text-muted-foreground">Lesson {index + 1}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Clock className="h-4 w-4" />
+                                <span>{lesson.duration}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ) : (
+                  // Non-enrolled users see a preview of the curriculum
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <BookOpen className="h-5 w-5" />
+                        Course Content
+                      </CardTitle>
+                      <p className="text-muted-foreground">
+                        {course.lessons.length} lessons • {course.duration} total length
+                      </p>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {course.lessons.map((lesson, index) => (
+                          <div
+                            key={lesson.id}
+                            className="flex items-center justify-between p-4 rounded-lg border opacity-75"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full flex items-center justify-center bg-muted">
+                                <Play className="h-4 w-4" />
+                              </div>
+                              <div>
+                                <h4 className="font-medium">{lesson.title}</h4>
+                                <p className="text-sm text-muted-foreground">Lesson {index + 1}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Clock className="h-4 w-4" />
+                              <span>{lesson.duration}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-4 p-4 bg-muted/50 rounded-lg text-center">
+                        <p className="text-muted-foreground mb-2">Enroll in this course to access all lessons</p>
+                        <Button className="bg-gradient-primary text-white">
+                          <ShoppingCart className="h-4 w-4 mr-2" />
+                          Enroll Now
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
 
               <TabsContent value="reviews" className="mt-6">
