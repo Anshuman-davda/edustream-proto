@@ -27,7 +27,7 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const { user } = useAuth();
   const { courses, loading: coursesLoading } = useCourses();
-  const { enrollments, loading: enrollmentsLoading } = useEnrollments(user?.id);
+  const { enrollments, isEnrolled, loading: enrollmentsLoading } = useEnrollments(user?.id);
 
   const featuredCourses = courses.slice(0, 3);
   const enrolledCourses = enrollments.slice(0, 3); // Show first 3 enrolled courses
@@ -109,7 +109,7 @@ const Index = () => {
                 <Button 
                   size="lg" 
                   variant="outline" 
-                  className="border-white/30 text-white hover:bg-white/10"
+                  className="border-white/30 text-primary hover:bg-primary/10 dark:text-white"
                   asChild
                 >
                   <Link to="/auth">
@@ -123,7 +123,16 @@ const Index = () => {
             <div className="relative">
               <div className="bg-white/10 rounded-2xl p-8 backdrop-blur-sm shadow-glow">
                 <div className="aspect-video bg-black/20 rounded-xl flex items-center justify-center mb-4">
-                  <PlayCircle className="h-16 w-16 text-white/80" />
+                  {courses[0]?.video_url ? (
+                    <video
+                      src={courses[0].video_url}
+                      poster={courses[0].thumbnail_url}
+                      controls
+                      className="w-full h-full rounded-xl object-cover"
+                    />
+                  ) : (
+                    <PlayCircle className="h-16 w-16 text-white/80" />
+                  )}
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -187,7 +196,7 @@ const Index = () => {
       </section>
 
       {/* Continue Your Learning Section */}
-      {user && enrolledCourses.length > 0 && !enrollmentsLoading && (
+  {user && enrolledCourses.length > 0 && !enrollmentsLoading && (
         <section className="py-16 bg-muted/30">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between mb-8">
@@ -198,42 +207,20 @@ const Index = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {enrolledCourses.map((enrollment) => (
-                <div key={enrollment.id} className="bg-card rounded-lg p-6 shadow-sm border">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg mb-2">{enrollment.course.title}</h3>
-                      <p className="text-muted-foreground text-sm mb-3">
-                        Instructor: {enrollment.course.instructor}
-                      </p>
-                    </div>
-                    {enrollment.course.thumbnail_url && (
-                      <img
-                        src={enrollment.course.thumbnail_url}
-                        alt={enrollment.course.title}
-                        className="w-16 h-16 rounded-lg object-cover ml-4"
-                      />
-                    )}
-                  </div>
-                  
-                  <div className="mb-4">
-                    <div className="flex justify-between text-sm text-muted-foreground mb-1">
-                      <span>Progress</span>
-                      <span>{enrollment.progress_percentage}%</span>
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div
-                        className="bg-gradient-primary h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${enrollment.progress_percentage}%` }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  <Link to={`/course/${enrollment.course.id}?tab=curriculum`}>
-                    <Button className="w-full bg-gradient-primary text-white">
-                      Continue Watching
-                    </Button>
-                  </Link>
-                </div>
+                <CourseCard
+                  key={enrollment.course.id}
+                  course={{
+                    ...enrollment.course,
+                    progress: enrollment.progress_percentage,
+                    reviews: enrollment.course.reviews_count,
+                    thumbnail: enrollment.course.thumbnail_url || '',
+                    videoUrl: enrollment.course.video_url || '',
+                    level: (enrollment.course.level as 'Beginner' | 'Intermediate' | 'Advanced'),
+                    lessons: [],
+                  }}
+                  enrolled={true}
+                  variant="enrolled"
+                />
               ))}
             </div>
           </div>
@@ -264,20 +251,15 @@ const Index = () => {
             {featuredCourses.map((course) => (
               <CourseCard
                 key={course.id}
-                id={course.id}
-                title={course.title}
-                description={course.description}
-                instructor={course.instructor}
-                price={course.price}
-                originalPrice={course.original_price}
-                duration={course.duration}
-                level={course.level}
-                category={course.category}
-                rating={course.rating}
-                reviews={course.reviews_count}
-                thumbnail={course.thumbnail_url || ''}
-                videoUrl={course.video_url || ''}
-                tags={course.tags}
+                course={{
+                  ...course,
+                  reviews: course.reviews_count,
+                  thumbnail: course.thumbnail_url || '',
+                  videoUrl: course.video_url || '',
+                  level: (course.level as 'Beginner' | 'Intermediate' | 'Advanced'),
+                  lessons: [],
+                }}
+                enrolled={isEnrolled(course.id)}
               />
             ))}
           </div>
@@ -307,12 +289,18 @@ const Index = () => {
             <Button 
               size="lg" 
               variant="outline" 
-              className="border-white/30 text-white hover:bg-white/10"
+              className="border-white/30 text-primary hover:bg-primary/10 dark:text-white"
               asChild
             >
-              <Link to="/dashboard">
-                View Dashboard
-              </Link>
+              {user ? (
+                <Link to="/dashboard">
+                  View Dashboard
+                </Link>
+              ) : (
+                <Link to="/auth">
+                  View Dashboard
+                </Link>
+              )}
             </Button>
           </div>
         </div>

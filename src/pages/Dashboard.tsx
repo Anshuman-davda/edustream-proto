@@ -3,6 +3,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import CourseCard from '@/components/course/CourseCard';
+import { useEnrollments } from '@/hooks/useCourses';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   BarChart, 
   Bar, 
@@ -26,10 +28,11 @@ import {
   Calendar,
   Target
 } from 'lucide-react';
-import { getUserEnrolledCourses } from '@/data/mockCourses';
+// import { getUserEnrolledCourses } from '@/data/mockCourses';
 
 const Dashboard = () => {
-  const enrolledCourses = getUserEnrolledCourses();
+  const { user } = useAuth();
+  const { enrollments } = useEnrollments(user?.id);
 
   // Mock analytics data
   const weeklyProgress = [
@@ -56,8 +59,8 @@ const Dashboard = () => {
   ];
 
   const totalHoursLearned = weeklyProgress.reduce((sum, day) => sum + day.hours, 0);
-  const averageProgress = enrolledCourses.reduce((sum, course) => sum + (course.progress || 0), 0) / enrolledCourses.length;
-  const completedCourses = enrolledCourses.filter(course => (course.progress || 0) >= 100).length;
+  const averageProgress = enrollments.length > 0 ? enrollments.reduce((sum, e) => sum + (e.progress_percentage || 0), 0) / enrollments.length : 0;
+  const completedCourses = enrollments.filter(e => (e.progress_percentage || 0) >= 100).length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -77,7 +80,7 @@ const Dashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-white/80 text-sm font-medium">Enrolled Courses</p>
-                  <p className="text-2xl font-bold">{enrolledCourses.length}</p>
+                  <p className="text-2xl font-bold">{enrollments.length}</p>
                 </div>
                 <BookOpen className="h-8 w-8 text-white/80" />
               </div>
@@ -204,24 +207,27 @@ const Dashboard = () => {
         {/* Enrolled Courses */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>My Courses</CardTitle>
-              <Button variant="outline" asChild>
-                <a href="/courses">Browse More</a>
-              </Button>
-            </div>
+            <CardTitle>My Courses</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {enrolledCourses.map((course) => (
-                <CourseCard 
-                  key={course.id} 
-                  course={course} 
-                  variant="enrolled" 
+            {enrollments.length > 0 ? (
+              enrollments.map((enrollment) => (
+                <CourseCard
+                  key={enrollment.course.id}
+                  course={{
+                    ...enrollment.course,
+                    progress: enrollment.progress_percentage,
+                    reviews: enrollment.course.reviews_count,
+                    thumbnail: enrollment.course.thumbnail_url || '',
+                    videoUrl: enrollment.course.video_url || '',
+                    level: (enrollment.course.level as 'Beginner' | 'Intermediate' | 'Advanced'),
+                    lessons: [],
+                  }}
+                  enrolled={true}
+                  variant="enrolled"
                 />
-              ))}
-            </div>
-            {enrolledCourses.length === 0 && (
+              ))
+            ) : (
               <div className="text-center py-12">
                 <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No courses enrolled yet</h3>

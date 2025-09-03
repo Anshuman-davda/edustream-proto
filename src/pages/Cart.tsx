@@ -12,11 +12,15 @@ import {
   Star
 } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
+import { useEnrollments } from '@/hooks/useCourses';
+import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
 const Cart = () => {
   const { items, removeFromCart, getTotalPrice, clearCart } = useCart();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { enrollInCourse } = useEnrollments(user?.id);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -34,20 +38,38 @@ const Cart = () => {
     });
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (items.length === 0) return;
-    
-    // Simulate checkout process
+    if (!user) {
+      toast({
+        title: "Not logged in",
+        description: "Please log in to enroll in courses.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    let successCount = 0;
+    let failCount = 0;
+    let errorMessages: string[] = [];
+    for (const item of items) {
+      const result = await enrollInCourse(item.course.id);
+      if (!result.error) successCount++;
+      else {
+        failCount++;
+        errorMessages.push('Error: ' + JSON.stringify(result));
+        // For debugging
+        // eslint-disable-next-line no-console
+        console.error('Enroll error:', result);
+      }
+    }
+
     toast({
-      title: "Checkout successful!",
-      description: `You have successfully enrolled in ${items.length} course${items.length > 1 ? 's' : ''}.`,
-      variant: "default"
+      title: "Checkout complete!",
+      description: `Enrolled in ${successCount} course${successCount !== 1 ? 's' : ''}. ${failCount > 0 ? failCount + ' failed. ' + errorMessages.join(' | ') : ''}`,
+      variant: failCount > 0 ? "destructive" : "default"
     });
-    
-    // Clear cart after successful checkout
-    setTimeout(() => {
-      clearCart();
-    }, 2000);
+    clearCart();
   };
 
   const totalOriginalPrice = items.reduce((total, item) => 

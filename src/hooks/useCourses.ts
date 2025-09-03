@@ -169,8 +169,12 @@ export const useEnrollments = (userId?: string) => {
   const enrollInCourse = async (courseId: string) => {
     if (!userId) return { error: 'User not authenticated' };
 
+    // Debug: log values being sent to Supabase
+    // eslint-disable-next-line no-console
+    console.log('EnrollInCourse:', { user_id: userId, course_id: courseId });
+
     try {
-      const { error } = await supabase
+      const response = await supabase
         .from('enrollments')
         .insert([
           {
@@ -180,14 +184,19 @@ export const useEnrollments = (userId?: string) => {
           }
         ]);
 
-      if (error) {
-        throw error;
+      // eslint-disable-next-line no-console
+      console.log('Supabase enroll response:', response);
+
+      if (response.error) {
+        throw response.error;
       }
 
       await fetchEnrollments();
-      return { error: null };
+      return response;
     } catch (err) {
-      return { error: err instanceof Error ? err.message : 'An error occurred' };
+      // eslint-disable-next-line no-console
+      console.error('EnrollInCourse error:', err);
+      return { error: err instanceof Error ? err.message : String(err) };
     }
   };
 

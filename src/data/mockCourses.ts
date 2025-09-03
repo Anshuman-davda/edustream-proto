@@ -29,7 +29,7 @@ export interface Lesson {
 
 export const mockCourses: Course[] = [
   {
-    id: '1',
+    id: '353da616-df8d-4f02-9553-bce4429ef71d',
     title: 'Complete React Development Bootcamp',
     description: 'Master React from basics to advanced concepts including hooks, context, Redux, and modern development practices.',
     instructor: 'Sarah Johnson',
@@ -50,7 +50,7 @@ export const mockCourses: Course[] = [
     tags: ['React', 'JavaScript', 'Frontend', 'Web Development']
   },
   {
-    id: '2',
+    id: '507700a7-0464-43e0-8445-f608b11b5bd2',
     title: 'Data Science with Python',
     description: 'Learn data science fundamentals, pandas, numpy, matplotlib, and machine learning with real-world projects.',
     instructor: 'Dr. Michael Chen',
@@ -74,7 +74,7 @@ export const mockCourses: Course[] = [
     progress: 65
   },
   {
-    id: '3',
+    id: 'a2bfbb6c-4f00-454a-acca-35047b067bf7',
     title: 'UX/UI Design Masterclass',
     description: 'Complete guide to user experience and user interface design with Figma, from wireframes to prototypes.',
     instructor: 'Emma Rodriguez',
@@ -96,7 +96,7 @@ export const mockCourses: Course[] = [
     progress: 25
   },
   {
-    id: '4',
+    id: '1c76035b-2591-4163-8bfc-b9a3fab070f7',
     title: 'Digital Marketing Strategy',
     description: 'Master digital marketing including SEO, social media, email marketing, and conversion optimization.',
     instructor: 'James Wilson',
@@ -117,7 +117,7 @@ export const mockCourses: Course[] = [
     tags: ['Marketing', 'SEO', 'Social Media', 'Analytics']
   },
   {
-    id: '5',
+    id: '9c0598a4-b504-4d92-bc57-19cbee5d21cf',
     title: 'Mobile App Development with Flutter',
     description: 'Build cross-platform mobile apps with Flutter and Dart, from basic widgets to complex applications.',
     instructor: 'Alex Kumar',
@@ -137,7 +137,7 @@ export const mockCourses: Course[] = [
     tags: ['Flutter', 'Dart', 'Mobile', 'Cross-platform']
   },
   {
-    id: '6',
+    id: 'e06cf01f-1f32-405f-88eb-c471f7fe4881',
     title: 'Blockchain and Cryptocurrency',
     description: 'Understand blockchain technology, cryptocurrency, smart contracts, and decentralized applications.',
     instructor: 'Lisa Park',

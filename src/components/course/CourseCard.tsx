@@ -20,14 +20,30 @@ interface CourseCardProps {
   variant?: 'default' | 'enrolled';
 }
 
-const CourseCard = ({ course, variant = 'default' }: CourseCardProps) => {
+
+interface CourseCardPropsFixed {
+  course: any;
+  enrolled: boolean;
+  variant?: 'default' | 'enrolled';
+}
+
+const CourseCard = ({ course, enrolled, variant = 'default' }: CourseCardPropsFixed) => {
+  if (!course) return null;
+
   const { addToCart, isInCart } = useCart();
   const { toast } = useToast();
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+    if (enrolled) {
+      toast({
+        title: "Already Enrolled",
+        description: "You are already enrolled in this course.",
+        variant: "default"
+      });
+      return;
+    }
     if (isInCart(course.id)) {
       toast({
         title: "Already in cart",
@@ -36,7 +52,6 @@ const CourseCard = ({ course, variant = 'default' }: CourseCardProps) => {
       });
       return;
     }
-
     addToCart(course);
     toast({
       title: "Added to cart",
@@ -146,7 +161,7 @@ const CourseCard = ({ course, variant = 'default' }: CourseCardProps) => {
               )}
             </div>
 
-            {variant === 'default' && !course.enrolled ? (
+            {variant === 'default' && !enrolled ? (
               <Button
                 onClick={handleAddToCart}
                 className={`${isInCart(course.id) ? 'bg-accent' : 'bg-gradient-primary'} text-white`}

@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/select';
 import CourseCard from '@/components/course/CourseCard';
 import { Search, Filter, SlidersHorizontal } from 'lucide-react';
-import { mockCourses, categories } from '@/data/mockCourses';
+import { useCourses, useEnrollments, categories } from '@/hooks/useCourses';
 
 const Courses = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -19,15 +19,16 @@ const Courses = () => {
   const [selectedLevel, setSelectedLevel] = useState('All');
   const [sortBy, setSortBy] = useState('popular');
 
-  const filteredCourses = mockCourses
+  const { courses, loading: coursesLoading } = useCourses();
+  const { isEnrolled } = useEnrollments();
+
+  const filteredCourses = courses
     .filter(course => {
       const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          course.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          course.instructor.toLowerCase().includes(searchTerm.toLowerCase());
-      
+        course.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        course.instructor.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = selectedCategory === 'All' || course.category === selectedCategory;
-      const matchesLevel = selectedLevel === 'All' || course.level === selectedLevel;
-      
+      const matchesLevel = selectedLevel === 'All' || (course.level && course.level === selectedLevel);
       return matchesSearch && matchesCategory && matchesLevel;
     })
     .sort((a, b) => {
@@ -41,7 +42,7 @@ const Courses = () => {
         case 'newest':
           return b.id.localeCompare(a.id);
         default: // popular
-          return b.reviews - a.reviews;
+          return b.reviews_count - a.reviews_count;
       }
     });
 
@@ -184,7 +185,19 @@ const Courses = () => {
         {filteredCourses.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCourses.map((course) => (
-              <CourseCard key={course.id} course={course} />
+              <CourseCard
+                key={course.id}
+                course={{
+                  ...course,
+                  reviews: course.reviews_count,
+                  thumbnail: course.thumbnail_url || '',
+                  videoUrl: course.video_url || '',
+                  level: (course.level as 'Beginner' | 'Intermediate' | 'Advanced'),
+                  lessons: [],
+                }}
+                enrolled={isEnrolled(course.id)}
+                variant={isEnrolled(course.id) ? 'enrolled' : 'default'}
+              />
             ))}
           </div>
         ) : (
