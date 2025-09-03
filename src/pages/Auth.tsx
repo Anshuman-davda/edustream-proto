@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +17,7 @@ import {
   Chrome
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -28,6 +30,21 @@ const Auth = () => {
     lastName: ''
   });
   const { toast } = useToast();
+  const { signIn, signUp, user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
+
+  if (loading) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+    </div>;
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -40,15 +57,32 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const { error } = await signIn(formData.email, formData.password);
+      
+      if (error) {
+        toast({
+          title: "Login failed",
+          description: error.message,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Login successful!",
+          description: "Welcome back to EduStream.",
+          variant: "default"
+        });
+        navigate('/');
+      }
+    } catch (err) {
       toast({
-        title: "Login successful!",
-        description: "Welcome back to EduStream.",
-        variant: "default"
+        title: "Login failed",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
       });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -65,15 +99,36 @@ const Auth = () => {
 
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const { error } = await signUp(
+        formData.email, 
+        formData.password, 
+        formData.firstName, 
+        formData.lastName
+      );
+      
+      if (error) {
+        toast({
+          title: "Registration failed",
+          description: error.message,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Registration successful!",
+          description: "Please check your email to confirm your account.",
+          variant: "default"
+        });
+      }
+    } catch (err) {
       toast({
-        title: "Registration successful!",
-        description: "Your account has been created. Welcome to EduStream!",
-        variant: "default"
+        title: "Registration failed",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
       });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleSocialAuth = (provider: string) => {

@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import CourseCard from '@/components/course/CourseCard';
 import { 
   GraduationCap, 
@@ -14,13 +16,28 @@ import {
   PlayCircle,
   Target,
   Clock,
-  Globe
+  Globe,
+  Search
 } from 'lucide-react';
-import { mockCourses, getUserEnrolledCourses } from '@/data/mockCourses';
+import { useCourses, useEnrollments, categories } from '@/hooks/useCourses';
+import { useAuth } from '@/hooks/useAuth';
 
 const Index = () => {
-  const featuredCourses = mockCourses.slice(0, 3);
-  const enrolledCourses = getUserEnrolledCourses();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const { user } = useAuth();
+  const { courses, loading: coursesLoading } = useCourses();
+  const { enrollments, loading: enrollmentsLoading } = useEnrollments(user?.id);
+
+  const featuredCourses = courses.slice(0, 3);
+  const enrolledCourses = enrollments.slice(0, 3); // Show first 3 enrolled courses
+
+  const filteredCourses = courses.filter(course => {
+    const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         course.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'All' || course.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
   
   const stats = [
     { label: 'Students', value: '50K+', icon: Users },
@@ -51,6 +68,14 @@ const Index = () => {
       description: 'Earn recognized certificates upon course completion'
     }
   ];
+
+  if (coursesLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -161,77 +186,54 @@ const Index = () => {
         </div>
       </section>
 
-      {/* You are watching Section */}
-      {enrolledCourses.length > 0 && (
-        <section className="py-16">
+      {/* Continue Your Learning Section */}
+      {user && enrolledCourses.length > 0 && !enrollmentsLoading && (
+        <section className="py-16 bg-muted/30">
           <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between mb-12">
-              <div>
-                <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                  Continue Your Learning
-                </h2>
-                <p className="text-xl text-muted-foreground">
-                  Pick up where you left off
-                </p>
-              </div>
-              <Button variant="outline" asChild>
-                <Link to="/dashboard">
-                  View All Progress
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Link>
-              </Button>
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-3xl font-bold">Continue Your Learning</h2>
+              <Link to="/dashboard">
+                <Button variant="outline">View All Courses</Button>
+              </Link>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {enrolledCourses.map((course) => (
-                <Card key={course.id} className="course-card overflow-hidden">
-                  <div className="relative">
-                    <img 
-                      src={course.thumbnail} 
-                      alt={course.title}
-                      className="w-full h-48 object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                      <Button
-                        size="lg"
-                        className="bg-white/20 backdrop-blur-sm text-white hover:bg-white/30"
-                        asChild
-                      >
-                        <Link to={`/course/${course.id}?tab=curriculum`}>
-                          <PlayCircle className="h-6 w-6 mr-2" />
-                          Continue Watching
-                        </Link>
-                      </Button>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {enrolledCourses.map((enrollment) => (
+                <div key={enrollment.id} className="bg-card rounded-lg p-6 shadow-sm border">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg mb-2">{enrollment.course.title}</h3>
+                      <p className="text-muted-foreground text-sm mb-3">
+                        Instructor: {enrollment.course.instructor}
+                      </p>
+                    </div>
+                    {enrollment.course.thumbnail_url && (
+                      <img
+                        src={enrollment.course.thumbnail_url}
+                        alt={enrollment.course.title}
+                        className="w-16 h-16 rounded-lg object-cover ml-4"
+                      />
+                    )}
+                  </div>
+                  
+                  <div className="mb-4">
+                    <div className="flex justify-between text-sm text-muted-foreground mb-1">
+                      <span>Progress</span>
+                      <span>{enrollment.progress_percentage}%</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div
+                        className="bg-gradient-primary h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${enrollment.progress_percentage}%` }}
+                      ></div>
                     </div>
                   </div>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-2">
-                      <Badge className="bg-accent text-white">
-                        {course.progress}% Complete
-                      </Badge>
-                      <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="text-sm">{course.rating}</span>
-                      </div>
-                    </div>
-                    <h3 className="font-semibold text-lg mb-2 line-clamp-2">{course.title}</h3>
-                    <p className="text-muted-foreground text-sm mb-4">
-                      by {course.instructor}
-                    </p>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span>Progress</span>
-                        <span>{course.progress}%</span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div 
-                          className="bg-gradient-primary h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${course.progress}%` }}
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+
+                  <Link to={`/course/${enrollment.course.id}?tab=curriculum`}>
+                    <Button className="w-full bg-gradient-primary text-white">
+                      Continue Watching
+                    </Button>
+                  </Link>
+                </div>
               ))}
             </div>
           </div>
@@ -239,7 +241,7 @@ const Index = () => {
       )}
 
       {/* Featured Courses */}
-      <section className="py-16 bg-muted/30">
+      <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-12">
             <div>
@@ -260,7 +262,23 @@ const Index = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {featuredCourses.map((course) => (
-              <CourseCard key={course.id} course={course} />
+              <CourseCard
+                key={course.id}
+                id={course.id}
+                title={course.title}
+                description={course.description}
+                instructor={course.instructor}
+                price={course.price}
+                originalPrice={course.original_price}
+                duration={course.duration}
+                level={course.level}
+                category={course.category}
+                rating={course.rating}
+                reviews={course.reviews_count}
+                thumbnail={course.thumbnail_url || ''}
+                videoUrl={course.video_url || ''}
+                tags={course.tags}
+              />
             ))}
           </div>
         </div>
