@@ -17,17 +17,11 @@ import { useToast } from '@/hooks/use-toast';
 
 interface CourseCardProps {
   course: Course;
-  variant?: 'default' | 'enrolled';
-}
-
-
-interface CourseCardPropsFixed {
-  course: any;
   enrolled: boolean;
   variant?: 'default' | 'enrolled';
 }
 
-const CourseCard = ({ course, enrolled, variant = 'default' }: CourseCardPropsFixed) => {
+const CourseCard = ({ course, enrolled, variant = 'default' }: CourseCardProps) => {
   if (!course) return null;
 
   const { addToCart, isInCart } = useCart();
@@ -46,7 +40,7 @@ const CourseCard = ({ course, enrolled, variant = 'default' }: CourseCardPropsFi
     }
     if (isInCart(course.id)) {
       toast({
-        title: "Already in cart",
+        title: "Already in Cart",
         description: "This course is already in your cart.",
         variant: "default"
       });
@@ -54,7 +48,7 @@ const CourseCard = ({ course, enrolled, variant = 'default' }: CourseCardPropsFi
     }
     addToCart(course);
     toast({
-      title: "Added to cart",
+      title: "Added to Cart",
       description: `${course.title} has been added to your cart.`,
       variant: "default"
     });
@@ -83,6 +77,7 @@ const CourseCard = ({ course, enrolled, variant = 'default' }: CourseCardPropsFi
   return (
     <Link to={`/course/${course.id}`}>
       <Card className="course-card group cursor-pointer h-full flex flex-col">
+        {/* Thumbnail */}
         <div className="relative overflow-hidden rounded-t-xl">
           <img
             src={course.thumbnail}
@@ -106,6 +101,7 @@ const CourseCard = ({ course, enrolled, variant = 'default' }: CourseCardPropsFi
           )}
         </div>
 
+        {/* Content */}
         <CardContent className="flex-1 p-6">
           <div className="mb-2">
             <Badge variant="secondary" className="text-xs">
@@ -148,6 +144,7 @@ const CourseCard = ({ course, enrolled, variant = 'default' }: CourseCardPropsFi
           </div>
         </CardContent>
 
+        {/* Footer with price + button */}
         <CardFooter className="p-6 pt-0">
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2">
@@ -161,28 +158,24 @@ const CourseCard = ({ course, enrolled, variant = 'default' }: CourseCardPropsFi
               )}
             </div>
 
-            {variant === 'default' && !enrolled ? (
-              <Button
-                onClick={handleAddToCart}
-                className={`${isInCart(course.id) ? 'bg-accent' : 'bg-gradient-primary'} text-white`}
-                disabled={isInCart(course.id)}
-              >
-                {isInCart(course.id) ? (
-                  <>
-                    <Check className="h-4 w-4 mr-2" />
-                    In Cart
-                  </>
-                ) : (
-                  <>
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    Add to Cart
-                  </>
-                )}
-              </Button>
-            ) : (
+            {/* Button logic */}
+            {enrolled ? (
               <Button className="bg-gradient-primary text-white">
                 <Play className="h-4 w-4 mr-2" />
                 Continue
+              </Button>
+            ) : isInCart(course.id) ? (
+              <Button className="bg-accent text-white" disabled>
+                <Check className="h-4 w-4 mr-2" />
+                In Cart
+              </Button>
+            ) : (
+              <Button
+                onClick={handleAddToCart}
+                className="bg-gradient-primary text-white"
+              >
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Add to Cart
               </Button>
             )}
           </div>
