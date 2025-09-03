@@ -14,23 +14,25 @@ import {
 import { Course } from '@/data/mockCourses';
 import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/hooks/use-toast';
+import { useEnrollmentStatus } from '@/hooks/useEnrollmentStatus';
 
 interface CourseCardProps {
   course: Course;
-  enrolled: boolean;
   variant?: 'default' | 'enrolled';
 }
 
-const CourseCard = ({ course, enrolled, variant = 'default' }: CourseCardProps) => {
+const CourseCard = ({ course, variant = 'default' }: CourseCardProps) => {
   if (!course) return null;
 
   const { addToCart, isInCart } = useCart();
   const { toast } = useToast();
+  const { isEnrolled, progress } = useEnrollmentStatus(course.id);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (enrolled) {
+
+    if (isEnrolled) {
       toast({
         title: "Already Enrolled",
         description: "You are already enrolled in this course.",
@@ -38,28 +40,29 @@ const CourseCard = ({ course, enrolled, variant = 'default' }: CourseCardProps) 
       });
       return;
     }
+
     if (isInCart(course.id)) {
       toast({
-        title: "Already in Cart",
+        title: "Already in cart",
         description: "This course is already in your cart.",
         variant: "default"
       });
       return;
     }
+
     addToCart(course);
     toast({
-      title: "Added to Cart",
+      title: "Added to cart",
       description: `${course.title} has been added to your cart.`,
       variant: "default"
     });
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
     }).format(price);
-  };
 
   const getLevelColor = (level: string) => {
     switch (level) {
@@ -77,7 +80,6 @@ const CourseCard = ({ course, enrolled, variant = 'default' }: CourseCardProps) 
   return (
     <Link to={`/course/${course.id}`}>
       <Card className="course-card group cursor-pointer h-full flex flex-col">
-        {/* Thumbnail */}
         <div className="relative overflow-hidden rounded-t-xl">
           <img
             src={course.thumbnail}
@@ -92,7 +94,7 @@ const CourseCard = ({ course, enrolled, variant = 'default' }: CourseCardProps) 
           <Badge className={`absolute top-3 right-3 ${getLevelColor(course.level)}`}>
             {course.level}
           </Badge>
-          {variant === 'enrolled' && (
+          {isEnrolled && (
             <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
               <div className="bg-white/90 rounded-full p-3">
                 <Play className="h-8 w-8 text-primary" />
@@ -101,7 +103,6 @@ const CourseCard = ({ course, enrolled, variant = 'default' }: CourseCardProps) 
           )}
         </div>
 
-        {/* Content */}
         <CardContent className="flex-1 p-6">
           <div className="mb-2">
             <Badge variant="secondary" className="text-xs">
@@ -121,13 +122,13 @@ const CourseCard = ({ course, enrolled, variant = 'default' }: CourseCardProps) 
             by {course.instructor}
           </div>
 
-          {variant === 'enrolled' && course.progress !== undefined && (
+          {isEnrolled && progress !== null && (
             <div className="mb-4">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-medium">Progress</span>
-                <span className="text-sm text-muted-foreground">{course.progress}%</span>
+                <span className="text-sm text-muted-foreground">{progress}%</span>
               </div>
-              <Progress value={course.progress} className="h-2" />
+              <Progress value={progress} className="h-2" />
             </div>
           )}
 
@@ -144,7 +145,6 @@ const CourseCard = ({ course, enrolled, variant = 'default' }: CourseCardProps) 
           </div>
         </CardContent>
 
-        {/* Footer with price + button */}
         <CardFooter className="p-6 pt-0">
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2">
@@ -158,24 +158,28 @@ const CourseCard = ({ course, enrolled, variant = 'default' }: CourseCardProps) 
               )}
             </div>
 
-            {/* Button logic */}
-            {enrolled ? (
+            {!isEnrolled ? (
+              <Button
+                onClick={handleAddToCart}
+                className={`${isInCart(course.id) ? 'bg-accent' : 'bg-gradient-primary'} text-white`}
+                disabled={isInCart(course.id)}
+              >
+                {isInCart(course.id) ? (
+                  <>
+                    <Check className="h-4 w-4 mr-2" />
+                    In Cart
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Add to Cart
+                  </>
+                )}
+              </Button>
+            ) : (
               <Button className="bg-gradient-primary text-white">
                 <Play className="h-4 w-4 mr-2" />
                 Continue
-              </Button>
-            ) : isInCart(course.id) ? (
-              <Button className="bg-accent text-white" disabled>
-                <Check className="h-4 w-4 mr-2" />
-                In Cart
-              </Button>
-            ) : (
-              <Button
-                onClick={handleAddToCart}
-                className="bg-gradient-primary text-white"
-              >
-                <ShoppingCart className="h-4 w-4 mr-2" />
-                Add to Cart
               </Button>
             )}
           </div>
