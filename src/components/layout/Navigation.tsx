@@ -1,45 +1,78 @@
-import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { 
-  GraduationCap, 
-  ShoppingCart, 
-  User, 
-  Moon, 
-  Sun, 
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  GraduationCap,
+  ShoppingCart,
+  User,
+  Moon,
+  Sun,
   BarChart3,
   BookOpen,
-  Home
-} from 'lucide-react';
-import { useCart } from '@/hooks/useCart';
+  Home,
+  LogOut,
+} from "lucide-react";
+import { useCart } from "@/hooks/useCart";
+import { supabase } from "@/lib/supabase";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navigation = () => {
   const location = useLocation();
   const { items } = useCart();
   const [darkMode, setDarkMode] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
-  // Initialize dark mode from localStorage
+  // Initialize dark mode
   useEffect(() => {
-    const saved = localStorage.getItem('darkMode');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const saved = localStorage.getItem("darkMode");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     const shouldBeDark = saved ? JSON.parse(saved) : prefersDark;
-    
+
     setDarkMode(shouldBeDark);
-    document.documentElement.classList.toggle('dark', shouldBeDark);
+    document.documentElement.classList.toggle("dark", shouldBeDark);
   }, []);
 
   const toggleDarkMode = () => {
     const newMode = !darkMode;
     setDarkMode(newMode);
-    localStorage.setItem('darkMode', JSON.stringify(newMode));
-    document.documentElement.classList.toggle('dark', newMode);
+    localStorage.setItem("darkMode", JSON.stringify(newMode));
+    document.documentElement.classList.toggle("dark", newMode);
+  };
+
+  // Check logged-in user
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user) {
+        setUser(data.user);
+      }
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
   };
 
   const navItems = [
-    { path: '/', label: 'Home', icon: Home },
-    { path: '/courses', label: 'Courses', icon: BookOpen },
-    { path: '/dashboard', label: 'Dashboard', icon: BarChart3 },
+    { path: "/", label: "Home", icon: Home },
+    { path: "/courses", label: "Courses", icon: BookOpen },
+    { path: "/dashboard", label: "Dashboard", icon: BarChart3 },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -65,9 +98,9 @@ const Navigation = () => {
                 <Button
                   variant={isActive(path) ? "default" : "ghost"}
                   className={`flex items-center space-x-2 ${
-                    isActive(path) 
-                      ? 'bg-gradient-primary text-white shadow-soft' 
-                      : 'hover:bg-muted'
+                    isActive(path)
+                      ? "bg-gradient-primary text-white shadow-soft"
+                      : "hover:bg-muted"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -86,11 +119,7 @@ const Navigation = () => {
               onClick={toggleDarkMode}
               className="rounded-full p-2"
             >
-              {darkMode ? (
-                <Sun className="h-4 w-4" />
-              ) : (
-                <Moon className="h-4 w-4" />
-              )}
+              {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
 
             {/* Cart */}
@@ -106,11 +135,35 @@ const Navigation = () => {
             </Link>
 
             {/* User menu */}
-            <Link to="/auth">
-              <Button variant="ghost">
-                <User className="h-5 w-5" />
-              </Button>
-            </Link>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="rounded-full">
+                    <User className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuLabel>
+                    <div className="text-sm font-medium">
+                      {user.email}
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile">Profile</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="h-4 w-4 mr-2" /> Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link to="/auth">
+                <Button variant="ghost">
+                  <User className="h-5 w-5" />
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </div>
