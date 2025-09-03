@@ -1,110 +1,67 @@
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import VideoPlayer from "@/components/media/VideoPlayer";
-import { Play, Check, ChevronLeft } from "lucide-react";
-import { useCourse } from "@/hooks/useCourses";
+import { Card, CardContent } from "@/components/ui/card";
+import { Sun, Moon } from "lucide-react";
+import ReactPlayer from "react-player";
 
-const CourseDetail = () => {
-  const { id } = useParams<{ id: string }>();
-  const { course, lessons, loading } = useCourse(id || "");
-  const [currentLesson, setCurrentLesson] = useState(0);
+export default function CoursePage() {
+  const [darkMode, setDarkMode] = useState(false);
+  const [selectedLesson, setSelectedLesson] = useState({
+    title: "Digital Marketing Fundamentals",
+    url: "https://your-supabase-video-link.mp4",
+  });
 
-  if (loading) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="animate-spin h-12 w-12 border-b-2 border-primary rounded-full"></div>
-      </div>
-    );
-  }
-
-  if (!course) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-bold">Course not found</h2>
-          <Button asChild>
-            <Link to="/courses">Back to Courses</Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  const current = lessons?.[currentLesson];
+  const lessons = [
+    { title: "Digital Marketing Fundamentals", url: "video1.mp4" },
+    { title: "SEO Best Practices", url: "video2.mp4" },
+    { title: "Social Media Strategy", url: "video3.mp4" },
+  ];
 
   return (
-    <div className="h-screen flex">
-      {/* === LEFT: Video + Controls === */}
-      <div className="flex-1 flex flex-col bg-black">
-        <div className="flex items-center justify-between text-white p-4 bg-gray-900">
-          <Link to="/courses" className="flex items-center gap-2 text-sm">
-            <ChevronLeft className="h-4 w-4" /> Back
-          </Link>
-          <h2 className="font-semibold">{course.title}</h2>
-          <div />
+    <div className={darkMode ? "dark bg-gray-900 text-white" : "bg-white text-black"}>
+      {/* Header */}
+      <header className="flex justify-between items-center p-4 border-b">
+        <h1 className="text-xl font-bold">Digital Marketing Strategy</h1>
+        <Button variant="ghost" onClick={() => setDarkMode(!darkMode)}>
+          {darkMode ? <Sun /> : <Moon />}
+        </Button>
+      </header>
+
+      {/* Layout */}
+      <div className="grid grid-cols-4 min-h-screen">
+        {/* Video Area */}
+        <div className="col-span-3 p-6">
+          <Card className="overflow-hidden rounded-2xl shadow-lg">
+            <CardContent>
+              <ReactPlayer
+                src={selectedLesson.url}
+                controls
+                width="100%"
+                height="480px"
+              />
+              <h2 className="mt-4 text-2xl font-semibold">{selectedLesson.title}</h2>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Video Player */}
-        <div className="flex-1">
-          <VideoPlayer
-            src={current?.video_url || course.video_url}
-            title={current?.title || "Course Preview"}
-            poster={course.thumbnail_url}
-          />
-        </div>
-
-        {/* Controls */}
-        <div className="p-4 bg-gray-900 text-white flex items-center justify-between">
-          <Button
-            onClick={() => setCurrentLesson((c) => Math.max(0, c - 1))}
-            disabled={currentLesson === 0}
-          >
-            Previous
-          </Button>
-          <Button
-            onClick={() =>
-              setCurrentLesson((c) =>
-                Math.min((lessons?.length || 1) - 1, c + 1)
-              )
-            }
-          >
-            Next
-          </Button>
-        </div>
-      </div>
-
-      {/* === RIGHT: Lesson List === */}
-      <div className="w-80 bg-white border-l overflow-y-auto">
-        <div className="p-4 border-b">
-          <h3 className="font-bold text-lg">Course Content</h3>
-          <Progress
-            value={(currentLesson / (lessons?.length || 1)) * 100}
-            className="mt-2"
-          />
-        </div>
-        <ul>
-          {lessons?.map((lesson, idx) => (
-            <li
-              key={lesson.id}
-              className={`p-3 cursor-pointer flex items-center justify-between ${
-                idx === currentLesson ? "bg-gray-100 font-semibold" : ""
-              }`}
-              onClick={() => setCurrentLesson(idx)}
-            >
-              <span>{lesson.title}</span>
-              {idx < currentLesson ? (
-                <Check className="h-4 w-4 text-green-600" />
-              ) : (
-                <Play className="h-4 w-4 text-gray-500" />
-              )}
-            </li>
-          ))}
-        </ul>
+        {/* Sidebar */}
+        <aside className="col-span-1 p-6 border-l">
+          <h3 className="font-bold text-lg mb-4">Course Content</h3>
+          <ul className="space-y-2">
+            {lessons.map((lesson, idx) => (
+              <li key={idx}>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-left"
+                  onClick={() => setSelectedLesson(lesson)}
+                >
+                  {lesson.title}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </aside>
       </div>
     </div>
   );
-};
-
-export default CourseDetail;
+}
