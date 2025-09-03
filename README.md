@@ -240,6 +240,3 @@ For support, please:
 
 ---
 
-**Ready to start learning?** 🎓 The database is populated with sample courses and ready for immediate use!
-
-Built with ❤️ using modern web technologies.
