@@ -19,6 +19,7 @@ import { useEnrollmentStatus } from '@/hooks/useEnrollmentStatus';
 interface CourseCardProps {
   course: Course;
   variant?: 'default' | 'enrolled';
+  enrolled?: boolean;
 }
 
 const CourseCard = ({ course, variant = 'default' }: CourseCardProps) => {
