@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,7 @@ const Auth = () => {
   const { toast } = useToast();
   const { signIn, signUp, user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -39,6 +40,29 @@ const Auth = () => {
       navigate('/');
     }
   }, [user, navigate]);
+
+  // Demo: quick trial account creation when ?trial=1
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('trial') === '1' && !user && !loading) {
+      const run = async () => {
+        try {
+          setIsLoading(true);
+          const email = `trial_${Math.random().toString(36).slice(2)}@example.com`;
+          const password = Math.random().toString(36).slice(2) + '!A1';
+          await signUp(email, password, 'Trial', 'User');
+          const { error } = await signIn(email, password);
+          if (!error) {
+            toast({ title: 'Free trial started', description: 'Explore the app with a demo account.' });
+            navigate('/dashboard', { replace: true });
+          }
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      run();
+    }
+  }, [location.search, user, loading, signIn, signUp, navigate, toast]);
 
   if (loading) {
     return <div className="min-h-screen bg-background flex items-center justify-center">

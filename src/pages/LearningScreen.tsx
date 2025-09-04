@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import VideoPlayer from '@/components/media/VideoPlayer';
 import { useCourse } from '@/hooks/useCourses';
 import { useAuth } from '@/hooks/useAuth';
+import { useLearningProgress } from '@/hooks/useLearningProgress';
 import { ChevronLeft, Check, Play, ArrowLeft, ArrowRight } from 'lucide-react';
 
 const LearningScreen = () => {
@@ -15,6 +16,7 @@ const LearningScreen = () => {
   const [currentLessonIdx, setCurrentLessonIdx] = useState(0);
   const [autoPlay, setAutoPlay] = useState(false);
   const prevLessonIdx = useRef<number>(0);
+  const { recordProgress } = useLearningProgress(courseId);
 
   useEffect(() => {
     if (lessons.length > 0) setCurrentLessonIdx(0);
@@ -77,6 +79,14 @@ const LearningScreen = () => {
                 poster={course.thumbnail_url}
                 title={currentLesson.title}
                 autoPlay={autoPlay}
+                onTimeUpdate={(current, dur) => {
+                  if (!user?.id) return;
+                  recordProgress(user.id, currentLesson.id, current, dur, false);
+                }}
+                onEnded={() => {
+                  if (!user?.id) return;
+                  recordProgress(user.id, currentLesson.id, currentLesson.duration ? Number(currentLesson.duration) : 0, currentLesson.duration ? Number(currentLesson.duration) : 0, true);
+                }}
               />
             </CardContent>
           </Card>

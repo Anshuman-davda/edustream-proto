@@ -112,7 +112,7 @@ const Index = () => {
                   className="border-white/30 text-primary hover:bg-primary/10 dark:text-white"
                   asChild
                 >
-                  <Link to="/auth">
+                  <Link to="/auth?trial=1">
                     Start Free Trial
                   </Link>
                 </Button>

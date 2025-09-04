@@ -96,6 +96,16 @@ const VideoPlayer = ({ src, title, poster, onTimeUpdate, onEnded, previewDuratio
     };
   }, [showControls, isPlaying]);
 
+  // Sync state if user exits fullscreen via ESC or enters via browser UI
+  useEffect(() => {
+    const handleFsChange = () => {
+      const fs = Boolean(document.fullscreenElement);
+      setIsFullscreen(fs);
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
+
   const togglePlay = () => {
     const video = videoRef.current;
     if (!video) return;
@@ -193,7 +203,11 @@ const VideoPlayer = ({ src, title, poster, onTimeUpdate, onEnded, previewDuratio
         ref={videoRef}
         src={src}
         poster={poster}
-        className="w-full aspect-[21/9] h-auto"
+        className={
+          isFullscreen
+            ? 'w-full h-full object-contain'
+            : 'w-full h-auto aspect-[16/9] md:aspect-[16/9]'
+        }
         onClick={togglePlay}
         // Prevent play if preview ended
         controls={false}

@@ -4,6 +4,7 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import CourseCard from '@/components/course/CourseCard';
 import { useEnrollments } from '@/hooks/useCourses';
+import { useWeeklyLearningHours, useSkillDistribution, useCourseProgressSummary } from '@/hooks/useDashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { 
   BarChart, 
@@ -33,32 +34,11 @@ import {
 const Dashboard = () => {
   const { user } = useAuth();
   const { enrollments } = useEnrollments(user?.id);
+  const { weeklyHours, totalHours } = useWeeklyLearningHours(user?.id);
+  const { skillDistribution } = useSkillDistribution(user?.id);
+  const { courseProgress } = useCourseProgressSummary(user?.id);
 
-  // Mock analytics data
-  const weeklyProgress = [
-    { day: 'Mon', hours: 2.5 },
-    { day: 'Tue', hours: 3.2 },
-    { day: 'Wed', hours: 1.8 },
-    { day: 'Thu', hours: 4.1 },
-    { day: 'Fri', hours: 2.9 },
-    { day: 'Sat', hours: 5.2 },
-    { day: 'Sun', hours: 3.7 }
-  ];
-
-  const courseProgress = [
-    { name: 'React Development', completed: 65, total: 100 },
-    { name: 'Data Science', completed: 40, total: 100 },
-    { name: 'UX Design', completed: 85, total: 100 }
-  ];
-
-  const skillDistribution = [
-    { name: 'Web Development', value: 40, color: '#8B5CF6' },
-    { name: 'Data Science', value: 30, color: '#06B6D4' },
-    { name: 'Design', value: 20, color: '#10B981' },
-    { name: 'Marketing', value: 10, color: '#F59E0B' }
-  ];
-
-  const totalHoursLearned = weeklyProgress.reduce((sum, day) => sum + day.hours, 0);
+  const totalHoursLearned = totalHours;
   const averageProgress = enrollments.length > 0 ? enrollments.reduce((sum, e) => sum + (e.progress_percentage || 0), 0) / enrollments.length : 0;
   const completedCourses = enrollments.filter(e => (e.progress_percentage || 0) >= 100).length;
 
@@ -136,7 +116,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={weeklyProgress}>
+                <BarChart data={weeklyHours}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="day" />
                   <YAxis />
@@ -190,12 +170,12 @@ const Dashboard = () => {
                 <div key={index} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
                   <div className="flex-1">
                     <h4 className="font-medium mb-2">{course.name}</h4>
-                    <Progress value={course.completed} className="w-full" />
+                    <Progress value={course.completedPercent} className="w-full" />
                   </div>
                   <div className="ml-4 text-right">
-                    <span className="text-sm font-medium">{course.completed}%</span>
+                    <span className="text-sm font-medium">{course.completedPercent}%</span>
                     <p className="text-xs text-muted-foreground">
-                      {course.completed}/{course.total} lessons
+                      {course.completedCount}/{course.total} lessons
                     </p>
                   </div>
                 </div>
