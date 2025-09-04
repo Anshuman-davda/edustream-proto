@@ -178,10 +178,12 @@ const CourseCard = ({ course, variant = 'default' }: CourseCardProps) => {
                 )}
               </Button>
             ) : (
-              <Button className="bg-gradient-primary text-white">
-                <Play className="h-4 w-4 mr-2" />
-                Continue
-              </Button>
+              <Link to={`/learn/${course.id}`} onClick={e => e.stopPropagation()}>
+                <Button className="bg-gradient-primary text-white w-full">
+                  <Play className="h-4 w-4 mr-2" />
+                  Continue
+                </Button>
+              </Link>
             )}
           </div>
         </CardFooter>

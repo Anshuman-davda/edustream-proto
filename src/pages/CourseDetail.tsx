@@ -206,6 +206,7 @@ const CourseDetail = () => {
                         src={selectedLesson.video_url}
                         poster={course.thumbnail_url}
                         title={selectedLesson.title}
+                        previewDuration={!enrolled ? 15 : undefined}
                       />
                     </div>
                   )}

@@ -14,6 +14,7 @@ import Cart from "./pages/Cart";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import LearningScreen from "./pages/LearningScreen";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,11 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/courses" element={<Courses />} />
             <Route path="/course/:id" element={<CourseDetail />} />
+            <Route path="/learn/:courseId" element={
+              <ProtectedRoute>
+                <LearningScreen />
+              </ProtectedRoute>
+            } />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />

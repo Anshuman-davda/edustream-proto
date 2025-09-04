@@ -18,9 +18,12 @@ interface VideoPlayerProps {
   poster?: string;
   onTimeUpdate?: (currentTime: number, duration: number) => void;
   onEnded?: () => void;
+  previewDuration?: number; // in seconds, if set, limits playback
+  autoPlay?: boolean;
 }
 
-const VideoPlayer = ({ src, title, poster, onTimeUpdate, onEnded }: VideoPlayerProps) => {
+const VideoPlayer = ({ src, title, poster, onTimeUpdate, onEnded, previewDuration, autoPlay }: VideoPlayerProps) => {
+  const [isPreviewEnded, setIsPreviewEnded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -39,12 +42,22 @@ const VideoPlayer = ({ src, title, poster, onTimeUpdate, onEnded }: VideoPlayerP
 
     const handleLoadedMetadata = () => {
       setDuration(video.duration);
+      if (autoPlay) {
+        video.play();
+        setIsPlaying(true);
+      }
     };
 
     const handleTimeUpdate = () => {
       const current = video.currentTime;
       setCurrentTime(current);
       onTimeUpdate?.(current, video.duration);
+      // Preview logic
+      if (previewDuration && current >= previewDuration) {
+        video.pause();
+        setIsPlaying(false);
+        setIsPreviewEnded(true);
+      }
     };
 
     const handleEnded = () => {
@@ -61,7 +74,7 @@ const VideoPlayer = ({ src, title, poster, onTimeUpdate, onEnded }: VideoPlayerP
       video.removeEventListener('timeupdate', handleTimeUpdate);
       video.removeEventListener('ended', handleEnded);
     };
-  }, [onTimeUpdate, onEnded]);
+  }, [onTimeUpdate, onEnded, previewDuration, autoPlay, src]);
 
   // Auto-hide controls
   useEffect(() => {
@@ -87,6 +100,9 @@ const VideoPlayer = ({ src, title, poster, onTimeUpdate, onEnded }: VideoPlayerP
     const video = videoRef.current;
     if (!video) return;
 
+    // Prevent play if preview ended
+    if (isPreviewEnded) return;
+
     if (isPlaying) {
       video.pause();
     } else {
@@ -99,9 +115,20 @@ const VideoPlayer = ({ src, title, poster, onTimeUpdate, onEnded }: VideoPlayerP
     const video = videoRef.current;
     if (!video || !duration) return;
 
-    const seekTime = (value[0] / 100) * duration;
+    let seekTime = (value[0] / 100) * duration;
+    // Prevent seeking past preview duration
+    if (previewDuration && seekTime > previewDuration) {
+      seekTime = previewDuration;
+    }
     video.currentTime = seekTime;
     setCurrentTime(seekTime);
+    if (previewDuration && seekTime >= previewDuration) {
+      setIsPreviewEnded(true);
+      video.pause();
+      setIsPlaying(false);
+    } else {
+      setIsPreviewEnded(false);
+    }
   };
 
   const handleVolumeChange = (value: number[]) => {
@@ -166,9 +193,20 @@ const VideoPlayer = ({ src, title, poster, onTimeUpdate, onEnded }: VideoPlayerP
         ref={videoRef}
         src={src}
         poster={poster}
-        className="w-full h-auto"
+        className="w-full aspect-[21/9] h-auto"
         onClick={togglePlay}
+        // Prevent play if preview ended
+        controls={false}
+        autoPlay={!!autoPlay}
       />
+
+      {/* Preview Ended Overlay */}
+      {isPreviewEnded && previewDuration && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 z-10">
+          <div className="text-white text-lg font-semibold mb-2">Preview Ended</div>
+          <div className="text-white text-sm mb-4">Enroll to watch the full lesson.</div>
+        </div>
+      )}
 
       {/* Controls Overlay */}
       <div 
