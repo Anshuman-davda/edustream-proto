@@ -206,7 +206,7 @@ const CourseDetail = () => {
                         src={selectedLesson.video_url}
                         poster={course.thumbnail_url}
                         title={selectedLesson.title}
-                        previewDuration={!enrolled ? 15 : undefined}
+                        autoPlay={false}
                       />
                     </div>
                   )}
@@ -230,6 +230,12 @@ const CourseDetail = () => {
                       </div>
                       <Progress value={75} className="h-2" />
                       <p className="text-sm text-muted-foreground">75% complete</p>
+                      <Button
+                        className="w-full bg-primary text-white"
+                        onClick={() => navigate(`/learn/${course.id}`)}
+                      >
+                        Continue Learning
+                      </Button>
                     </div>
                   ) : (
                     <div className="space-y-3">

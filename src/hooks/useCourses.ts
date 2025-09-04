@@ -1,225 +1,130 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
+export { categories } from '@/data/mockCourses';
 
-export interface Course {
-  id: string;
-  title: string;
-  description: string;
-  instructor: string;
-  price: number;
-  original_price?: number;
-  duration: string;
-  level: string; // Changed from union type to string to match database
-  category: string;
-  rating: number;
-  reviews_count: number;
-  thumbnail_url?: string;
-  video_url?: string;
-  audio_url?: string;
-  tags: string[];
-  is_published: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Lesson {
-  id: string;
-  course_id: string;
-  title: string;
-  description?: string;
-  duration: string;
-  video_url?: string;
-  order_index: number;
-  is_preview: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Enrollment {
-  id: string;
-  user_id: string;
-  course_id: string;
-  enrolled_at: string;
-  completed_at?: string;
-  progress_percentage: number;
-}
+type DbCourse = Database['public']['Tables']['courses']['Row'];
+type DbLesson = Database['public']['Tables']['lessons']['Row'];
+type DbEnrollment = Database['public']['Tables']['enrollments']['Row'];
 
 export const useCourses = () => {
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [courses, setCourses] = useState<DbCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const fetchCourses = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const { data, error } = await supabase
+          .from('courses')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        setCourses((data as unknown as DbCourse[]) ?? []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchCourses();
   }, []);
 
-  const fetchCourses = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('courses')
-        .select('*')
-        .eq('is_published', true)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        throw error;
-      }
-
-      setCourses(data || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return { courses, loading, error, refetch: fetchCourses };
+  return { courses, loading, error };
 };
 
 export const useCourse = (courseId: string) => {
-  const [course, setCourse] = useState<Course | null>(null);
-  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [course, setCourse] = useState<DbCourse | null>(null);
+  const [lessons, setLessons] = useState<DbLesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (courseId) {
-      fetchCourse();
-    }
+    if (!courseId) return;
+    const fetchCourseAndLessons = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const [{ data: courseData, error: courseError }, { data: lessonsData, error: lessonsError }] = await Promise.all([
+          supabase.from('courses').select('*').eq('id', courseId).single(),
+          supabase.from('lessons').select('*').eq('course_id', courseId).order('order_index', { ascending: true })
+        ]);
+        if (courseError) throw courseError;
+        if (lessonsError) throw lessonsError;
+        setCourse((courseData as unknown as DbCourse) ?? null);
+        setLessons((lessonsData as unknown as DbLesson[]) ?? []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCourseAndLessons();
   }, [courseId]);
 
-  const fetchCourse = async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch course details
-      const { data: courseData, error: courseError } = await supabase
-        .from('courses')
-        .select('*')
-        .eq('id', courseId)
-        .eq('is_published', true)
-        .single();
-
-      if (courseError) {
-        throw courseError;
-      }
-
-      // Fetch course lessons
-      const { data: lessonsData, error: lessonsError } = await supabase
-        .from('lessons')
-        .select('*')
-        .eq('course_id', courseId)
-        .order('order_index', { ascending: true });
-
-      if (lessonsError) {
-        throw lessonsError;
-      }
-
-      setCourse(courseData);
-      setLessons(lessonsData || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return { course, lessons, loading, error, refetch: fetchCourse };
+  return { course, lessons, loading, error };
 };
 
-export const useEnrollments = (userId?: string) => {
-  const [enrollments, setEnrollments] = useState<(Enrollment & { course: Course })[]>([]);
+export const useEnrollments = (explicitUserId?: string) => {
+  const [enrollments, setEnrollments] = useState<(DbEnrollment & { course: DbCourse })[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (userId) {
-      fetchEnrollments();
-    } else {
-      setLoading(false);
-      setEnrollments([]);
-    }
-  }, [userId]);
-
   const fetchEnrollments = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('enrollments')
-        .select(`
-          *,
-          course:courses(*)
-        `)
-        .eq('user_id', userId)
-        .order('enrolled_at', { ascending: false });
+    setLoading(true);
+    setError(null);
 
-      if (error) {
-        throw error;
+    try {
+      const uid = explicitUserId || (await supabase.auth.getUser()).data.user?.id;
+
+      if (!uid) {
+        setEnrollments([]);
+        setLoading(false);
+        return;
       }
 
-      setEnrollments(data || []);
+      const { data, error } = await supabase
+        .from('enrollments')
+        .select('*, course:courses(*)')
+        .eq('user_id', uid)
+        .order('enrolled_at', { ascending: false });
+
+      if (error) throw error;
+
+      setEnrollments((data as unknown as (DbEnrollment & { course: DbCourse })[]) ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
   };
 
-  const enrollInCourse = async (courseId: string) => {
-    if (!userId) return { error: 'User not authenticated' };
+  useEffect(() => {
+    fetchEnrollments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [explicitUserId]);
 
-    // Debug: log values being sent to Supabase
-    // eslint-disable-next-line no-console
-    console.log('EnrollInCourse:', { user_id: userId, course_id: courseId });
+  const enrollInCourse = async (courseId: string) => {
+    const uid = explicitUserId || (await supabase.auth.getUser()).data.user?.id;
+
+    if (!uid) return { error: 'User not authenticated' };
 
     try {
-      const response = await supabase
+      const { data, error } = await supabase
         .from('enrollments')
-        .insert([
-          {
-            user_id: userId,
-            course_id: courseId,
-            progress_percentage: 0
-          }
-        ]);
+        .insert([{ user_id: uid, course_id: courseId, progress_percentage: 0 }]);
 
-      // eslint-disable-next-line no-console
-      console.log('Supabase enroll response:', response);
-
-      if (response.error) {
-        throw response.error;
-      }
-
+      if (error) throw error;
       await fetchEnrollments();
-      return response;
+      return { data };
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error('EnrollInCourse error:', err);
       return { error: err instanceof Error ? err.message : String(err) };
     }
   };
 
-  const isEnrolled = (courseId: string): boolean => {
-    return enrollments.some(enrollment => enrollment.course_id === courseId);
-  };
+  const isEnrolled = (courseId: string) => enrollments.some((e) => e.course_id === courseId);
 
-  return {
-    enrollments,
-    loading,
-    error,
-    enrollInCourse,
-    isEnrolled,
-    refetch: fetchEnrollments
-  };
+  return { enrollments, loading, error, enrollInCourse, isEnrolled, refetch: fetchEnrollments };
 };
-
-export const categories = [
-  'All',
-  'Web Development',
-  'Data Science',
-  'Design',
-  'Marketing',
-  'Mobile Development',
-  'Technology'
-];

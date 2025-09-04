@@ -20,6 +20,14 @@ const LearningScreen = () => {
     if (lessons.length > 0) setCurrentLessonIdx(0);
   }, [lessons]);
 
+  // Reset autoplay after lesson loads
+  useEffect(() => {
+    if (autoPlay && prevLessonIdx.current !== currentLessonIdx) {
+      setTimeout(() => setAutoPlay(false), 500); // allow autoplay for a short time
+      prevLessonIdx.current = currentLessonIdx;
+    }
+  }, [currentLessonIdx, autoPlay]);
+
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (!course || lessons.length === 0) return <div className="min-h-screen flex items-center justify-center">Course or lessons not found.</div>;
 
@@ -31,14 +39,6 @@ const LearningScreen = () => {
       setAutoPlay(true); // trigger autoplay on lesson change
     }
   };
-
-  // Reset autoplay after lesson loads
-  useEffect(() => {
-    if (autoPlay && prevLessonIdx.current !== currentLessonIdx) {
-      setTimeout(() => setAutoPlay(false), 500); // allow autoplay for a short time
-      prevLessonIdx.current = currentLessonIdx;
-    }
-  }, [currentLessonIdx, autoPlay]);
 
   return (
     <div className="min-h-screen flex bg-background">

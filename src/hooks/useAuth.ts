@@ -6,12 +6,19 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, firstName: string, lastName: string) => Promise<{ error: any }>;
+  signUp: (
+    email: string,
+    password: string,
+    firstName: string,
+    lastName: string
+  ) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
 
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(
+  undefined
+);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -27,9 +34,9 @@ export const useAuthProvider = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+    // Setup auth state listener
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -43,12 +50,20 @@ export const useAuthProvider = () => {
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    // Cleanup safely
+    return () => {
+      listener?.subscription?.unsubscribe?.();
+    };
   }, []);
 
-  const signUp = async (email: string, password: string, firstName: string, lastName: string) => {
+  const signUp = async (
+    email: string,
+    password: string,
+    firstName: string,
+    lastName: string
+  ) => {
     const redirectUrl = `${window.location.origin}/`;
-    
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -57,10 +72,10 @@ export const useAuthProvider = () => {
         data: {
           first_name: firstName,
           last_name: lastName,
-        }
-      }
+        },
+      },
     });
-    
+
     return { error };
   };
 
@@ -69,7 +84,7 @@ export const useAuthProvider = () => {
       email,
       password,
     });
-    
+
     return { error };
   };
 
