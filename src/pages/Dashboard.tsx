@@ -223,7 +223,6 @@ const Dashboard = () => {
                     level: (enrollment.course.level as 'Beginner' | 'Intermediate' | 'Advanced'),
                     lessons: [],
                   }}
-                  enrolled={true}
                   variant="enrolled"
                 />
               ))

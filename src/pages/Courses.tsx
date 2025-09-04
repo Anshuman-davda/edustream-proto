@@ -195,7 +195,6 @@ const Courses = () => {
                   level: (course.level as 'Beginner' | 'Intermediate' | 'Advanced'),
                   lessons: [],
                 }}
-                enrolled={isEnrolled(course.id)}
                 variant={isEnrolled(course.id) ? 'enrolled' : 'default'}
               />
             ))}

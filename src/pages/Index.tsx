@@ -207,20 +207,19 @@ const Index = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {enrolledCourses.map((enrollment) => (
-                <CourseCard
-                  key={enrollment.course.id}
-                  course={{
-                    ...enrollment.course,
-                    progress: enrollment.progress_percentage,
-                    reviews: enrollment.course.reviews_count,
-                    thumbnail: enrollment.course.thumbnail_url || '',
-                    videoUrl: enrollment.course.video_url || '',
-                    level: (enrollment.course.level as 'Beginner' | 'Intermediate' | 'Advanced'),
-                    lessons: [],
-                  }}
-                  enrolled={true}
-                  variant="enrolled"
-                />
+              <CourseCard
+                key={enrollment.course.id}
+                course={{
+                  ...enrollment.course,
+                  progress: enrollment.progress_percentage,
+                  reviews: enrollment.course.reviews_count,
+                  thumbnail: enrollment.course.thumbnail_url || '',
+                  videoUrl: enrollment.course.video_url || '',
+                  level: (enrollment.course.level as 'Beginner' | 'Intermediate' | 'Advanced'),
+                  lessons: [],
+                }}
+                variant="enrolled"
+              />
               ))}
             </div>
           </div>
@@ -259,7 +258,6 @@ const Index = () => {
                   level: (course.level as 'Beginner' | 'Intermediate' | 'Advanced'),
                   lessons: [],
                 }}
-                enrolled={isEnrolled(course.id)}
               />
             ))}
           </div>
